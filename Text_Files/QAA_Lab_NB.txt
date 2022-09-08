@@ -1,0 +1,123 @@
+Author: Itzel Espinoza
+
+------- 4 Demultiplexed FASTQ Files -------
+R1="/projects/bgmp/shared/2017_sequencing/demultiplexed/21_3G_both_S15_L008_R1_001.fastq.gz"
+R2="/projects/bgmp/shared/2017_sequencing/demultiplexed/21_3G_both_S15_L008_R2_001.fastq.gz"
+
+R3="/projects/bgmp/shared/2017_sequencing/demultiplexed/34_4H_both_S24_L008_R1_001.fastq.gz"
+R4="/projects/bgmp/shared/2017_sequencing/demultiplexed/34_4H_both_S24_L008_R2_001.fastq.gz"
+
+------- Pathway output folder -------
+/projects/bgmp/kespinoz/bioinfo/Bi623/FASTQC/output_fastqc
+
+
+============== Running fastqc module ==============
+Online Documentation for fastqc: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/INSTALL.txt
+    To run on terminal:
+    > module spyder fastqc
+    > module load fastqc/0.11.5
+    > echo $PATH
+    > fastqc
+
+------- Using fastqc on files -------
+Running fastqc on files: Repeat for all 4 files
+    fastqc -o <where you want files stored at> <what files to analyze>
+
+> fastqc -o /projects/bgmp/kespinoz/bioinfo/Bi623/FASTQC/output_fastqc /projects/bgmp/shared/2017_sequencing/demultiplexed/21_3G_both_S15_L008_R1_001.fastq.gz
+> fastqc -o /projects/bgmp/kespinoz/bioinfo/Bi623/FASTQC/output_fastqc /projects/bgmp/shared/2017_sequencing/demultiplexed/34_4H_both_S24_L008_R1_001.fastq.gz
+
+------- Downloading Files to Local Computer -------
+Note: You'll get 2 files for each analysis: one fastqc.html and fastqc.zip
+> scp -r talapas:/projects/bgmp/kespinoz/bioinfo/Bi623/FASTQC/output_fastqc /Users/espinozakaren/bioinformatics/Bi623
+
+------------- Opening an Interactive Window on Talapas while using VS code -------------
+Will not cause much disruption when other people are using Talapas
+command: srun --account=bgmp --partition=bgmp --time=60:00 --pty bash
+
+============== Create a new conda environment called QAA ============== 
+Online Resource: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html
+
+On termina do
+$ conda create --name QAA 
+then select y
+
+============== Install cutadapt (version 4.1)============== 
+Online Resource: https://cutadapt.readthedocs.io/en/stable/installation.html
+Online Resource: https://cutadapt.readthedocs.io/en/stable/guide.html
+
+$ conda install -n QAA cutadapt
+$ conda activate QAA
+$ cutadapt --version
+--> 4.1 :)
+
+Note: Activate QAA environment prior to installing packages
+
+
+============== Using cutadapt for Paired End sequencing ============== 
+Online Resource: https://cutadapt.readthedocs.io/en/stable/guide.html#paired-end
+
+Command Format: 
+$ cutadapt -a ADAPTER_FWD -A ADAPTER_REV -o out.1.fastq -p out.2.fastq reads.1.fastq reads.2.fastq
+
+Command Example for File 21_3G R1 and R2
+$ cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT -o out_21_R1.fastq -p out_21_R2.fastq  /projects/bgmp/shared/2017_sequencing/demultiplexed/21_3G_both_S15_L008_R1_001.fastq.gz /projects/bgmp/shared/2017_sequencing/demultiplexed/21_3G_both_S15_L008_R2_001.fastq.gz
+
+$ cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT -o out_34_R1.fastq -p out_34_R2.fastq /projects/bgmp/shared/2017_sequencing/demultiplexed/34_4H_both_S24_L008_R1_001.fastq.gz /projects/bgmp/shared/2017_sequencing/demultiplexed/34_4H_both_S24_L008_R2_001.fastq.gz
+
+
+============== Installing Trimmomatic (version 0.39)============== 
+Online Resource: https://speciationgenomics.github.io/Trimmomatic/
+
+$ conda install -n QAA trimmomatic=0.39
+>$conda list
+--> 0.39 for trimmomatic
+
+======= Using Trimmomatic =======
+1. Make a directory for the trimmed reads
+2. Make an sbatch script including the following criteria and in this order:
+    * LEADING: quality of 3
+    * TRAILING: quality of 3
+    * SLIDING WINDOW: window size of 5 and required quality of 15
+    * MINLENGTH: 35 bases
+
+-----  Input files----- 
+Example: Sample_Name.f.fastq -> Sample_Name.r.fastq
+> 21_3G.f.fastq  = R1
+> 21_3G.r.fastq  = R2
+ 
+----- 21_3G 4 output files ----- 
+o 21_Filtered_1P.fq.gz - for paired forward reads
+o 21_Filtered_1U.fq.gz - for unpaired forward reads
+o 21_Filtered_2P.fq.gz - for paired reverse reads
+o 21_Filtered_2U.fq.gz - for unpaired reverse reads
+
+3. Run fastqc again on trimmed files
+Note: Only on paired output files: such as 21_Filtered_1P.fq.gz  and 21_Filtered_2P.fq.gz 
+
+$ fastqc -o /gpfs/projects/bgmp/kespinoz/bioinfo/Bi623/FASTQC/fastqc_output_trim
+    /gpfs/projects/bgmp/kespinoz/bioinfo/Bi623/FASTQC/trimmed_reads/21_Filtered_1P.fq.gz
+
+4. Download Files to home directory
+$ scp -r talapas:/gpfs/projects/bgmp/kespinoz/bioinfo/Bi623/FASTQC/fastqc_output_trim /Users/espinozakaren/bioinformatics/Bi623/FAST_QC/fastqc_trimmed
+
+
+============== Calc. the  Number of Read Length Distribution ============== 
+$ zcat 21_Filtered_2P.fq.gz | sed -n "2~4p" | awk '{print length($0)}'| sort -n | uniq -c > 21_2P_distribution.txt
+
+1st column = counts
+2nd column = length 
+
+============== Using HTSEQ Package ============== 
+Online Resource: https://htseq.readthedocs.io/en/release_0.11.1/count.html
+
+NOTE: Run htseq-count twice: once with --stranded=yes and again with --stranded=reverse. Use default parameters otherwise.
+NOTE: command used: use interactive node BEFORE running this $ srun --account=bgmp --partition=bgmp --time=60:00 --pty bash
+
+$ htseq-count [options] <alignment_files> <gff_file>
+
+Example Command: 
+> htseq-count --format sam --stranded=yes  aligned_21_Mus_musculus.GRCm39.dnaAligned.out.sam Mus_musculus.GRCm39.107.gtf > 21_3G_htseq_Forward_strand.txt
+
+Output Files
+  1. 21_3G_htseq_Forward_strand.txt
+  2. 21_3G_htseq_reverse_strand.txt

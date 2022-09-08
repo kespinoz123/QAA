@@ -1,0 +1,58 @@
+#!/bin/bash
+#SBATCH --account=bgmp         ### SLURM account which will be charged for the job
+#SBATCH --job-name=STAR     ### Job Name
+#SBATCH --output=STAR_34mousedna-%j.out         ### File in which to store job output
+#SBATCH --error=STAR_34mousedna-%j.err          ### File in which to store job error messages
+#SBATCH --time=0-02:00:00       ### Wall clock time limit in Days-HH:MM:SS
+#SBATCH --nodes=1               ### Node count required for the job
+#SBATCH --ntasks-per-node=1     ### Nuber of tasks to be launched per Node
+#SBATCH --cpus-per-task=8       ### Number of cpus (cores) per task
+#SBATCH --partition=bgmp          ### partition to run things
+
+#the RNA seq data we are algining 
+R1='/projects/bgmp/kespinoz/bioinfo/Bi623/FASTQC/trimmed_reads/34_Filtered_1P.fq.gz'
+R2='/projects/bgmp/kespinoz/bioinfo/Bi623/FASTQC/trimmed_reads/34_Filtered_2P.fq.gz'
+
+
+#from 8
+/usr/bin/time -v STAR --runThreadN 8 --runMode alignReads \
+--outFilterMultimapNmax 3 \
+--outSAMunmapped Within KeepPairs \
+--alignIntronMax 1000000 --alignMatesGapMax 1000000 \
+--readFilesCommand zcat \
+--readFilesIn $R1 $R2 \
+--genomeDir ../mouse_ensembl/Mus_musculus.GRCm39.dna.107.STAR_2.7.10a/ \
+--outFileNamePrefix aligned_34_Mus_musculus.GRCm39.dna
+
+
+#------------- Notes For Steps After Running this Script -------------
+#After steps from above, do the following for 
+    # sbatch STAR.srun 
+    # squeue -u kespinoz
+
+#create an interactive window using command: srun --account=bgmp --partition=bgmp --time=60:00 --pty bash
+    #conda activate bgmp_py310
+
+#convert SAM to BAM: 
+    #Command: samtools view -@ n -Sb -o Danio_rerio.GRCz11.dna.Aligned.out.bam Danio_rerio.GRCz11.dna.Aligned.out.sam
+    #output after doing ls
+        # Danio_rerio.GRCz11.dna.Aligned.out.bam 
+
+#Sorting File: 
+    #Command: samtools sort -O bam Danio_rerio.GRCz11.dna.Aligned.out.bam -o sorted_Danio_rerio.GRCz11.dna.Aligned.out.bam
+        #Output File: sorted_Danio_rerio.GRCz11.dna.Aligned.out.bam
+
+#Indexing Sorted Bam File: 
+    #Command: samtools index sorted_Danio_rerio.GRCz11.dna.Aligned.out.bam
+    
+#question 10: extracting reads from chromosome 1:
+    #command on samtools: samtools view sorted_Danio_rerio.GRCz11.dna.Aligned.out.bam 1 | wc -l
+        #Output: 921737
+    #Verifying previous results of 921737 
+    #Command: cat Danio_rerio.GRCz11.dna.Aligned.out.sam | grep -v "^@" | cut -f 3 | sort | uniq -c # to remove headers @ for and f3 for chrmosome.
+        #Output: 921737 1
+        #Both match!
+
+# Appending resutls to a SAM file
+    #command: samtools view sorted_Danio_rerio.GRCz11.dna.Aligned.out.bam 1 > sorted_Danio_rerio.GRCz11.dna.Aligned.out.Chromosome1.sam
+    #Command: cat sorted_Danio_rerio.GRCz11.dna.Aligned.out.Chromosome1.sam

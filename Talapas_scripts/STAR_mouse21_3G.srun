@@ -1,0 +1,35 @@
+#!/bin/bash
+#SBATCH --account=bgmp         ### SLURM account which will be charged for the job
+#SBATCH --job-name=STAR     ### Job Name
+#SBATCH --output=STAR_21mousedna-%j.out         ### File in which to store job output
+#SBATCH --error=STAR_21mousedna-%j.err          ### File in which to store job error messages
+#SBATCH --time=0-02:00:00       ### Wall clock time limit in Days-HH:MM:SS
+#SBATCH --nodes=1               ### Node count required for the job
+#SBATCH --ntasks-per-node=1     ### Nuber of tasks to be launched per Node
+#SBATCH --cpus-per-task=8       ### Number of cpus (cores) per task
+#SBATCH --partition=bgmp          ### partition to run things
+
+#the RNA seq data we are algining 
+R1='/projects/bgmp/kespinoz/bioinfo/Bi623/FASTQC/trimmed_reads/21_Filtered_1P.fq.gz'
+R2='/projects/bgmp/kespinoz/bioinfo/Bi623/FASTQC/trimmed_reads/21_Filtered_2P.fq.gz'
+
+
+#from 8
+/usr/bin/time -v STAR --runThreadN 8 --runMode alignReads \
+--outFilterMultimapNmax 3 \
+--outSAMunmapped Within KeepPairs \
+--alignIntronMax 1000000 --alignMatesGapMax 1000000 \
+--readFilesCommand zcat \
+--readFilesIn $R1 $R2 \
+--genomeDir ../mouse_ensembl/Mus_musculus.GRCm39.dna.107.STAR_2.7.10a/ \
+--outFileNamePrefix aligned_21_Mus_musculus.GRCm39.dna
+
+#make sure to verify your paths for each directory included above 
+
+#------------- Notes For Steps After Running this Script -------------
+#After steps from above, do the following for 
+    # sbatch STAR.srun 
+    # squeue -u kespinoz
+
+
+
