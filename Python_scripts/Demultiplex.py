@@ -4,15 +4,15 @@ import numpy as np
 import bioinfo
 import matplotlib.pyplot as plt
 
-#R2 is index 1 with R1 biological
-#R3 is index 2 with R4 biological 
+# R2 is index 1 with R1 biological
+# R3 is index 2 with R4 biological 
 
 R1="/projects/bgmp/shared/2017_sequencing/1294_S1_L008_R1_001.fastq.gz" 
 R2="/projects/bgmp/shared/2017_sequencing/1294_S1_L008_R2_001.fastq.gz" 
 R3="/projects/bgmp/shared/2017_sequencing/1294_S1_L008_R3_001.fastq.gz" 
 R4="/projects/bgmp/shared/2017_sequencing/1294_S1_L008_R4_001.fastq.gz" 
-# R1="testR1.fq.gz"
-#overwrite for test file
+# R1 = "testR1.fq.gz"
+# Overwrite for test file
 
 def get_args():
     parser = argparse.ArgumentParser(description="A program for demultiplexing")
@@ -70,7 +70,7 @@ plt.title("Distribution of Mean Quality Score across Read Position", fontsize=10
 plt.savefig(f"Hist_R1.png")
 #plt.savefig(f"Hist_k{args.size}.png")
 
-# Wrapper Notes:
-# Its a bash script that calls my python script
+# ----- Wrapper Notes ----- 
+# This is a bash script that calls my python script
 # we write a wrapper to pass sbash commands and do conda activate (or anything else we need to do bash wise before we run our python script)
-# command to run: sbatch [insert name of script for wrapper]
+# Command to run: sbatch [insert name of script for wrapper]
